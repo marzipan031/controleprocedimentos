@@ -1,0 +1,391 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { BarChart3, ChevronDown, Download, FlaskConical, HeartPulse, Search, Stethoscope, Star, Undo2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { AccountMenu } from "@/components/exams/AccountMenu";
+import { ExamForm } from "@/components/exams/ExamForm";
+import { MetricsPanel } from "@/components/exams/MetricsPanel";
+import { ChiefMetrics } from "@/components/exams/ChiefMetrics";
+import { RecordsTable } from "@/components/exams/RecordsTable";
+import { ImportDialog } from "@/components/exams/ImportDialog";
+import {
+  countBoth,
+  recordTypes,
+  toCSV,
+  useExamsData,
+  type ExamRecord,
+} from "@/lib/exams-store";
+
+export default function Painel() {
+  useEffect(() => {
+    document.title = "Painel de Exames | Registro e Métricas";
+  }, []);
+
+  const {
+    records,
+    types,
+    chiefs,
+    previousEndoscopias,
+    previousGastrostomias,
+    addRecord,
+    updateRecord,
+
+    removeMany,
+    restoreRecords,
+    setTypes,
+    setChiefs,
+    setPreviousEndoscopias,
+    setPreviousGastrostomias,
+  } = useExamsData();
+
+  const [query, setQuery] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [onlyBiopsy, setOnlyBiopsy] = useState(false);
+  const [onlyInteresting, setOnlyInteresting] = useState(false);
+  const [onlyBoth, setOnlyBoth] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+  const [chiefFilter, setChiefFilter] = useState<string[]>([]);
+  const [editing, setEditing] = useState<ExamRecord | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastDeleted, setLastDeleted] = useState<ExamRecord[]>([]);
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return records
+      .filter((r) =>
+        q
+          ? r.patient.toLowerCase().includes(q) ||
+            r.chief.toLowerCase().includes(q) ||
+            recordTypes(r).join(" ").toLowerCase().includes(q) ||
+            r.observation.toLowerCase().includes(q) ||
+            (r.findings || "").toLowerCase().includes(q)
+          : true,
+      )
+      .filter((r) => (from ? r.date >= from : true))
+      .filter((r) => (to ? r.date <= to : true))
+      .filter((r) => (onlyBiopsy ? !!r.biopsy : true))
+      .filter((r) => (onlyInteresting ? !!r.interesting : true))
+      .filter((r) => (onlyBoth ? recordTypes(r).includes("Endoscopia") && recordTypes(r).includes("Colonoscopia") : true))
+      .filter((r) =>
+        typeFilter.length ? recordTypes(r).some((t) => typeFilter.includes(t)) : true,
+      )
+      .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true))
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  }, [records, query, from, to, onlyBiopsy, onlyInteresting, onlyBoth, typeFilter, chiefFilter]);
+
+  const activeFilters =
+    (query ? 1 : 0) +
+    (from ? 1 : 0) +
+    (to ? 1 : 0) +
+    (onlyBiopsy ? 1 : 0) +
+    (onlyInteresting ? 1 : 0) +
+    (onlyBoth ? 1 : 0) +
+    typeFilter.length +
+    chiefFilter.length;
+
+  const toggleIn = (list: string[], value: string) =>
+    list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+
+  const deleteWithUndo = (rows: ExamRecord[], message: string) => {
+    removeMany(rows.map((r) => r.id));
+    setLastDeleted(rows);
+    toast.success(message, {
+      action: {
+        label: "Desfazer",
+        onClick: () => {
+          restoreRecords(rows);
+          setLastDeleted([]);
+          toast.success("Exclusão desfeita.");
+        },
+      },
+    });
+  };
+
+  const exportCSV = () => {
+    if (filtered.length === 0) {
+      toast.error("Nenhum registro para exportar.");
+      return;
+    }
+    const blob = new Blob([toCSV(filtered)], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `exames-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Arquivo CSV exportado.");
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="bg-[image:var(--gradient-header)] text-primary-foreground">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-8 sm:px-6">
+          <HeartPulse className="size-8" />
+          <div className="flex-1">
+            <h1 className="text-xl font-semibold sm:text-2xl">Gestão de Exames Médicos</h1>
+            <p className="text-sm opacity-90">
+              Registro, contagem e métricas por chefe responsável
+            </p>
+          </div>
+          <Button asChild variant="secondary" size="sm">
+            <Link to="/estatisticas">
+              <BarChart3 className="mr-1 size-4" /> Estatísticas
+            </Link>
+          </Button>
+          <AccountMenu />
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+        <MetricsPanel
+          rows={filtered}
+          previousEndoscopias={previousEndoscopias}
+          previousGastrostomias={previousGastrostomias}
+          onPreviousEndoscopiasChange={setPreviousEndoscopias}
+          onPreviousGastrostomiasChange={setPreviousGastrostomias}
+        />
+
+        <div ref={formRef}>
+        <ExamForm
+          types={types}
+          chiefs={chiefs}
+          setTypes={setTypes}
+          setChiefs={setChiefs}
+          typeUsage={(t) => records.filter((r) => recordTypes(r).includes(t)).length}
+          chiefUsage={(c) => records.filter((r) => r.chief === c).length}
+          editing={editing}
+          onCancelEdit={() => setEditing(null)}
+          onSubmit={(data) => {
+            if (editing) {
+              updateRecord(editing.id, data);
+              setEditing(null);
+              toast.success("Registro atualizado.");
+            } else {
+              addRecord(data);
+              toast.success("Registro salvo.");
+            }
+          }}
+        />
+        </div>
+
+        <ChiefMetrics rows={filtered} chiefs={chiefs} />
+
+        <Card className="shadow-[var(--shadow-card)]">
+          <CardContent className="grid gap-4 py-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2 lg:col-span-2">
+              <Label htmlFor="q">Buscar</Label>
+              <div className="relative">
+                <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+                <Input
+                  id="q"
+                  className="pl-9"
+                  placeholder="Paciente, chefe ou tipo de exame"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="from">De</Label>
+              <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="to">Até</Label>
+              <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            </div>
+            <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant={typeFilter.length ? "default" : "outline"}>
+                    Tipo de exame {typeFilter.length ? `(${typeFilter.length})` : ""}
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                  {types.map((t) => (
+                    <DropdownMenuCheckboxItem
+                      key={t}
+                      checked={typeFilter.includes(t)}
+                      onSelect={(e) => e.preventDefault()}
+                      onCheckedChange={() => setTypeFilter((prev) => toggleIn(prev, t))}
+                    >
+                      {t}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant={chiefFilter.length ? "default" : "outline"}>
+                    Chefe {chiefFilter.length ? `(${chiefFilter.length})` : ""}
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                  {chiefs.map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c}
+                      checked={chiefFilter.includes(c)}
+                      onSelect={(e) => e.preventDefault()}
+                      onCheckedChange={() => setChiefFilter((prev) => toggleIn(prev, c))}
+                    >
+                      {c}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant={onlyBiopsy ? "default" : "outline"}
+                onClick={() => setOnlyBiopsy((v) => !v)}
+              >
+                <FlaskConical className="size-4" /> Checar biópsia (
+                {records.filter((r) => r.biopsy).length})
+              </Button>
+              <Button
+                variant={onlyInteresting ? "default" : "outline"}
+                onClick={() => setOnlyInteresting((v) => !v)}
+              >
+                <Star className="size-4" /> Interessantes (
+                {records.filter((r) => r.interesting).length})
+              </Button>
+              <Button
+                variant={onlyBoth ? "default" : "outline"}
+                onClick={() => setOnlyBoth((v) => !v)}
+              >
+                <Stethoscope className="size-4" /> EDA + Colono ({countBoth(records)})
+              </Button>
+              <Button variant="outline" onClick={exportCSV}>
+                <Download className="size-4" /> Exportar CSV
+              </Button>
+              <ImportDialog
+                onImport={(rows) => {
+                  const newTypes = new Set(types);
+                  const newChiefs = new Set(chiefs);
+                  rows.forEach((r) => {
+                    (r.types ?? []).forEach((t) => t && newTypes.add(t));
+                    if (r.chief) newChiefs.add(r.chief);
+                    addRecord(r);
+                  });
+
+                  setTypes([...newTypes]);
+                  setChiefs([...newChiefs]);
+                }}
+              />
+              {lastDeleted.length > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    restoreRecords(lastDeleted);
+                    toast.success(`${lastDeleted.length} registro(s) restaurado(s).`);
+                    setLastDeleted([]);
+                  }}
+                >
+                  <Undo2 className="size-4" /> Desfazer última exclusão
+                </Button>
+              )}
+              {activeFilters > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setQuery("");
+                    setFrom("");
+                    setTo("");
+                    setOnlyBiopsy(false);
+                    setOnlyInteresting(false);
+                    setOnlyBoth(false);
+                    setTypeFilter([]);
+                    setChiefFilter([]);
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              )}
+            </div>
+            {activeFilters > 0 && (
+              <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
+                <Badge variant="secondary">
+                  {activeFilters} filtro(s) ativo(s)
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  <strong className="text-foreground tabular-nums">{filtered.length}</strong> de{" "}
+                  {records.length} procedimento(s) correspondem à seleção
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <RecordsTable
+          rows={filtered}
+          selectedIds={selectedIds}
+          onSelect={(id, value) =>
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              if (value) next.add(id);
+              else next.delete(id);
+              return next;
+            })
+          }
+          onSelectAll={(value) =>
+            setSelectedIds(new Set(value ? filtered.map((r) => r.id) : []))
+          }
+          onEdit={(r) => {
+            setEditing(r);
+            formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          onDelete={(r) => deleteWithUndo([r], "Registro excluído.")}
+          onDeleteSelected={() => setConfirmBulk(true)}
+          onToggle={(r, field, value) => updateRecord(r.id, { [field]: value })}
+        />
+      </main>
+
+      <AlertDialog open={confirmBulk} onOpenChange={setConfirmBulk}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedIds.size} registro(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação remove os registros selecionados. Você poderá desfazer logo em seguida.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const rows = records.filter((r) => selectedIds.has(r.id));
+                deleteWithUndo(rows, `${rows.length} registro(s) excluído(s).`);
+                setSelectedIds(new Set());
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
