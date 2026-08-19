@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export default function ResetPassword() {
   useEffect(() => {
-    document.title = "Redefinir senha | Gestão de Exames Médicos";
+    document.title = "Redefinir senha | Gestão de Procedimentos Médicos";
   }, []);
 
   const { configured, updatePassword } = useAuth();

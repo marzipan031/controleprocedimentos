@@ -1,7 +1,8 @@
-# Gestão de Exames Médicos
+# Gestão de Procedimentos Médicos
 
-Registro e métricas de exames endoscópicos, com painel principal, estatísticas
-com gráficos, e (opcionalmente) login com aprovação de cadastro por um admin.
+Registro e métricas de procedimentos médicos, com painel principal, estatísticas
+com gráficos por tipo/chefe/tempo, cards de contagem dinâmicos e (opcionalmente)
+login com aprovação de cadastro por um admin.
 
 ## Stack
 
@@ -15,7 +16,7 @@ npm install
 npm run dev
 ```
 
-Sem nenhuma configuração adicional, o app roda direto: registro de exames,
+Sem nenhuma configuração adicional, o app roda direto: registro de procedimentos,
 métricas, filtros, CSV e importação de planilha funcionam 100% no navegador
 (dados em LocalStorage). As telas de login/cadastro/admin só entram em ação
 quando o Supabase estiver configurado (veja abaixo) — até lá elas mostram um

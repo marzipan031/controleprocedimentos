@@ -11,9 +11,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { todayISO, type ExamRecord } from "@/lib/exams-store";
+import { todayISO, type ProcedureRecord } from "@/lib/procedures-store";
 
-type NewRecord = Omit<ExamRecord, "id" | "created_at">;
+type NewRecord = Omit<ProcedureRecord, "id" | "created_at">;
 
 const norm = (s: string) =>
   s
@@ -24,9 +24,9 @@ const norm = (s: string) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 const FIELDS = {
-  date: ["data", "data do exame", "data exame"],
+  date: ["data", "data do procedimento", "data do exame", "data exame"],
   patient: ["paciente", "nome", "nome do paciente"],
-  type: ["tipo", "tipo de exame", "exame"],
+  type: ["tipo", "tipo de procedimento", "tipo de exame", "procedimento", "exame"],
   chief: ["chefe", "chefe responsavel", "responsavel", "medico"],
   observation: ["observacao", "observacoes", "obs", "nota", "notas"],
   findings: ["achados", "achados endoscopicos", "achado"],
@@ -39,7 +39,7 @@ const truthy = (v: unknown) =>
     String(v ?? "").trim().toLowerCase(),
   );
 
-/** Divide "EDA + Colono" / "Endoscopia, Colonoscopia" em tipos separados. */
+/** Divide "Apendicectomia + Endoscopia" / "Endoscopia, Colonoscopia" em tipos separados. */
 function parseTypes(raw: string): string[] {
   const parts = raw
     .split(/[+,;/]/)
@@ -47,14 +47,7 @@ function parseTypes(raw: string): string[] {
     .filter(Boolean);
   const out: string[] = [];
   for (const p of parts) {
-    const n = norm(p);
-    const mapped =
-      n === "eda" || n.startsWith("endo")
-        ? "Endoscopia"
-        : n.startsWith("colono")
-          ? "Colonoscopia"
-          : p;
-    if (!out.includes(mapped)) out.push(mapped);
+    if (!out.includes(p)) out.push(p);
   }
   return out;
 }
@@ -158,9 +151,9 @@ export function ImportDialog({
         <DialogHeader>
           <DialogTitle>Importar Excel ou CSV</DialogTitle>
           <DialogDescription>
-            O arquivo deve ter uma linha de cabeçalho com as colunas: Data, Paciente, Tipo de Exame,
-            Chefe Responsável e Observação (opcional). Tipos e chefes novos são cadastrados
-            automaticamente.
+            O arquivo deve ter uma linha de cabeçalho com as colunas: Data, Paciente, Tipo de
+            Procedimento, Chefe Responsável e Observação (opcional). Tipos e chefes novos são
+            cadastrados automaticamente.
           </DialogDescription>
         </DialogHeader>
         <input

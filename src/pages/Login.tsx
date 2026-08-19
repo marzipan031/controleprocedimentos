@@ -35,7 +35,7 @@ function PasswordChecklist({ password }: { password: string }) {
 
 export default function Login() {
   useEffect(() => {
-    document.title = "Entrar | Gestão de Exames Médicos";
+    document.title = "Entrar | Gestão de Procedimentos Médicos";
   }, []);
 
   const { configured, session, profile, loading, signIn, signUp, requestPasswordReset } = useAuth();
@@ -124,7 +124,7 @@ export default function Login() {
           <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-[image:var(--gradient-header)] text-primary-foreground">
             <HeartPulse className="size-6" />
           </div>
-          <CardTitle>Gestão de Exames Médicos</CardTitle>
+          <CardTitle>Gestão de Procedimentos Médicos</CardTitle>
           <CardDescription>
             {mode === "forgot" ? "Recuperar senha" : "Entre ou cadastre-se para continuar"}
           </CardDescription>

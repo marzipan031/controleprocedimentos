@@ -1,4 +1,4 @@
--- Gestão de Exames Médicos — schema de autenticação e aprovação de cadastros.
+-- Gestão de Procedimentos Médicos — schema de autenticação e aprovação de cadastros.
 -- Rode este arquivo inteiro no SQL Editor do seu projeto Supabase
 -- (https://app.supabase.com/project/_/sql/new).
 --

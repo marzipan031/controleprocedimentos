@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { recordTypes, todayISO, type ExamRecord } from "@/lib/exams-store";
+import { procedureTypes, todayISO, type ProcedureRecord } from "@/lib/procedures-store";
 import { ManageListDialog } from "./ManageListDialog";
 
 type Props = {
@@ -24,7 +24,7 @@ type Props = {
   setChiefs: (v: string[]) => void;
   typeUsage: (t: string) => number;
   chiefUsage: (c: string) => number;
-  editing: ExamRecord | null;
+  editing: ProcedureRecord | null;
   onCancelEdit: () => void;
   onSubmit: (data: {
     patient: string;
@@ -39,7 +39,7 @@ type Props = {
   }) => void;
 };
 
-export function ExamForm({
+export function ProcedureForm({
   types,
   chiefs,
   setTypes,
@@ -64,7 +64,7 @@ export function ExamForm({
     if (editing) {
       setPatient(editing.patient);
       setDate(editing.date);
-      setSelectedTypes(recordTypes(editing));
+      setSelectedTypes(procedureTypes(editing));
       setChief(editing.chief);
       setObservation(editing.observation || "");
       setFindings(editing.findings || "");
@@ -96,11 +96,11 @@ export function ExamForm({
       return;
     }
     if (!date) {
-      toast.error("Informe a data do exame.");
+      toast.error("Informe a data do procedimento.");
       return;
     }
     if (selectedTypes.length === 0) {
-      toast.error("Marque ao menos um tipo de exame.");
+      toast.error("Marque ao menos um tipo de procedimento.");
       return;
     }
     if (!chief) {
@@ -126,12 +126,12 @@ export function ExamForm({
       <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
         <CardTitle className="flex items-center gap-2 text-base">
           <Stethoscope className="size-5 text-primary" />
-          {editing ? "Editar exame" : "Adicionar exame"}
+          {editing ? "Editar procedimento" : "Adicionar procedimento"}
         </CardTitle>
         <div className="flex flex-wrap gap-2">
           <ManageListDialog
-            title="Gerenciar tipos de exame"
-            description="Adicione ou remova os tipos disponíveis no formulário."
+            title="Gerenciar tipos de procedimento"
+            description="Adicione ou remova os tipos disponíveis no formulário. Cada tipo novo ganha automaticamente um card de contagem em Estatísticas."
             items={types}
             onChange={setTypes}
             usageCount={typeUsage}
@@ -168,11 +168,11 @@ export function ExamForm({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="date">Data do exame</Label>
+            <Label htmlFor="date">Data do procedimento</Label>
             <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-2 sm:col-span-2 lg:col-span-2">
-            <Label>Tipos de exame (marque um ou mais)</Label>
+            <Label>Tipos de procedimento (marque um ou mais)</Label>
             <div className="flex flex-wrap gap-x-5 gap-y-2 rounded-md border border-input p-3">
               {types.length === 0 && (
                 <span className="text-sm text-muted-foreground">Nenhum tipo cadastrado.</span>
@@ -218,18 +218,18 @@ export function ExamForm({
               value={observation}
               maxLength={500}
               onChange={(e) => setObservation(e.target.value)}
-              placeholder="Informações adicionais sobre o exame (opcional)"
+              placeholder="Informações adicionais sobre o procedimento (opcional)"
             />
           </div>
           <div className="space-y-2 sm:col-span-2 lg:col-span-5">
-            <Label htmlFor="findings">Achados endoscópicos</Label>
+            <Label htmlFor="findings">Achados</Label>
             <Textarea
               id="findings"
               value={findings}
               maxLength={1000}
               rows={3}
               onChange={(e) => setFindings(e.target.value)}
-              placeholder="Descreva os achados endoscópicos (opcional)"
+              placeholder="Descreva os achados do procedimento (opcional)"
             />
           </div>
           <div className="flex flex-wrap items-center gap-6 sm:col-span-2 lg:col-span-5">

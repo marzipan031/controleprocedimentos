@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { type Profile, type ProfileStatus } from "@/lib/auth-context";
-import { formatDateBR } from "@/lib/exams-store";
+import { formatDateBR } from "@/lib/procedures-store";
 
 const STATUS_LABEL: Record<ProfileStatus, string> = {
   pending: "Pendente",
@@ -42,7 +42,7 @@ const STATUS_VARIANT: Record<ProfileStatus, "secondary" | "default" | "destructi
 
 export default function Cadastros() {
   useEffect(() => {
-    document.title = "Cadastros | Gestão de Exames Médicos";
+    document.title = "Cadastros | Gestão de Procedimentos Médicos";
   }, []);
 
   const [profiles, setProfiles] = useState<Profile[]>([]);

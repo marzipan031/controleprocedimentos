@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, ChevronDown, Download, FlaskConical, HeartPulse, Search, Stethoscope, Star, Undo2 } from "lucide-react";
+import { BarChart3, ChevronDown, Download, FlaskConical, HeartPulse, Search, Star, Undo2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,53 +24,44 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { AccountMenu } from "@/components/exams/AccountMenu";
-import { ExamForm } from "@/components/exams/ExamForm";
-import { MetricsPanel } from "@/components/exams/MetricsPanel";
-import { ChiefMetrics } from "@/components/exams/ChiefMetrics";
-import { RecordsTable } from "@/components/exams/RecordsTable";
-import { ImportDialog } from "@/components/exams/ImportDialog";
+import { AccountMenu } from "@/components/procedures/AccountMenu";
+import { ProcedureForm } from "@/components/procedures/ProcedureForm";
+import { ProceduresTable } from "@/components/procedures/ProceduresTable";
+import { ImportDialog } from "@/components/procedures/ImportDialog";
 import {
-  countBoth,
-  recordTypes,
+  procedureTypes,
   toCSV,
-  useExamsData,
-  type ExamRecord,
-} from "@/lib/exams-store";
+  useProceduresData,
+  type ProcedureRecord,
+} from "@/lib/procedures-store";
 
 export default function Painel() {
   useEffect(() => {
-    document.title = "Painel de Exames | Registro e Métricas";
+    document.title = "Painel de Procedimentos | Registro";
   }, []);
 
   const {
     records,
     types,
     chiefs,
-    previousEndoscopias,
-    previousGastrostomias,
     addRecord,
     updateRecord,
-
     removeMany,
     restoreRecords,
     setTypes,
     setChiefs,
-    setPreviousEndoscopias,
-    setPreviousGastrostomias,
-  } = useExamsData();
+  } = useProceduresData();
 
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [onlyBiopsy, setOnlyBiopsy] = useState(false);
   const [onlyInteresting, setOnlyInteresting] = useState(false);
-  const [onlyBoth, setOnlyBoth] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [chiefFilter, setChiefFilter] = useState<string[]>([]);
-  const [editing, setEditing] = useState<ExamRecord | null>(null);
+  const [editing, setEditing] = useState<ProcedureRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [lastDeleted, setLastDeleted] = useState<ExamRecord[]>([]);
+  const [lastDeleted, setLastDeleted] = useState<ProcedureRecord[]>([]);
   const [confirmBulk, setConfirmBulk] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -81,7 +72,7 @@ export default function Painel() {
         q
           ? r.patient.toLowerCase().includes(q) ||
             r.chief.toLowerCase().includes(q) ||
-            recordTypes(r).join(" ").toLowerCase().includes(q) ||
+            procedureTypes(r).join(" ").toLowerCase().includes(q) ||
             r.observation.toLowerCase().includes(q) ||
             (r.findings || "").toLowerCase().includes(q)
           : true,
@@ -90,13 +81,12 @@ export default function Painel() {
       .filter((r) => (to ? r.date <= to : true))
       .filter((r) => (onlyBiopsy ? !!r.biopsy : true))
       .filter((r) => (onlyInteresting ? !!r.interesting : true))
-      .filter((r) => (onlyBoth ? recordTypes(r).includes("Endoscopia") && recordTypes(r).includes("Colonoscopia") : true))
       .filter((r) =>
-        typeFilter.length ? recordTypes(r).some((t) => typeFilter.includes(t)) : true,
+        typeFilter.length ? procedureTypes(r).some((t) => typeFilter.includes(t)) : true,
       )
       .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  }, [records, query, from, to, onlyBiopsy, onlyInteresting, onlyBoth, typeFilter, chiefFilter]);
+  }, [records, query, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter]);
 
   const activeFilters =
     (query ? 1 : 0) +
@@ -104,14 +94,13 @@ export default function Painel() {
     (to ? 1 : 0) +
     (onlyBiopsy ? 1 : 0) +
     (onlyInteresting ? 1 : 0) +
-    (onlyBoth ? 1 : 0) +
     typeFilter.length +
     chiefFilter.length;
 
   const toggleIn = (list: string[], value: string) =>
     list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
-  const deleteWithUndo = (rows: ExamRecord[], message: string) => {
+  const deleteWithUndo = (rows: ProcedureRecord[], message: string) => {
     removeMany(rows.map((r) => r.id));
     setLastDeleted(rows);
     toast.success(message, {
@@ -135,7 +124,7 @@ export default function Painel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `exames-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `procedimentos-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Arquivo CSV exportado.");
@@ -147,10 +136,8 @@ export default function Painel() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-8 sm:px-6">
           <HeartPulse className="size-8" />
           <div className="flex-1">
-            <h1 className="text-xl font-semibold sm:text-2xl">Gestão de Exames Médicos</h1>
-            <p className="text-sm opacity-90">
-              Registro, contagem e métricas por chefe responsável
-            </p>
+            <h1 className="text-xl font-semibold sm:text-2xl">Gestão de Procedimentos Médicos</h1>
+            <p className="text-sm opacity-90">Registro e lista de procedimentos</p>
           </div>
           <Button asChild variant="secondary" size="sm">
             <Link to="/estatisticas">
@@ -162,38 +149,28 @@ export default function Painel() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-        <MetricsPanel
-          rows={filtered}
-          previousEndoscopias={previousEndoscopias}
-          previousGastrostomias={previousGastrostomias}
-          onPreviousEndoscopiasChange={setPreviousEndoscopias}
-          onPreviousGastrostomiasChange={setPreviousGastrostomias}
-        />
-
         <div ref={formRef}>
-        <ExamForm
-          types={types}
-          chiefs={chiefs}
-          setTypes={setTypes}
-          setChiefs={setChiefs}
-          typeUsage={(t) => records.filter((r) => recordTypes(r).includes(t)).length}
-          chiefUsage={(c) => records.filter((r) => r.chief === c).length}
-          editing={editing}
-          onCancelEdit={() => setEditing(null)}
-          onSubmit={(data) => {
-            if (editing) {
-              updateRecord(editing.id, data);
-              setEditing(null);
-              toast.success("Registro atualizado.");
-            } else {
-              addRecord(data);
-              toast.success("Registro salvo.");
-            }
-          }}
-        />
+          <ProcedureForm
+            types={types}
+            chiefs={chiefs}
+            setTypes={setTypes}
+            setChiefs={setChiefs}
+            typeUsage={(t) => records.filter((r) => procedureTypes(r).includes(t)).length}
+            chiefUsage={(c) => records.filter((r) => r.chief === c).length}
+            editing={editing}
+            onCancelEdit={() => setEditing(null)}
+            onSubmit={(data) => {
+              if (editing) {
+                updateRecord(editing.id, data);
+                setEditing(null);
+                toast.success("Registro atualizado.");
+              } else {
+                addRecord(data);
+                toast.success("Registro salvo.");
+              }
+            }}
+          />
         </div>
-
-        <ChiefMetrics rows={filtered} chiefs={chiefs} />
 
         <Card className="shadow-[var(--shadow-card)]">
           <CardContent className="grid gap-4 py-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -204,7 +181,7 @@ export default function Painel() {
                 <Input
                   id="q"
                   className="pl-9"
-                  placeholder="Paciente, chefe ou tipo de exame"
+                  placeholder="Paciente, chefe ou tipo de procedimento"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -222,7 +199,7 @@ export default function Painel() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant={typeFilter.length ? "default" : "outline"}>
-                    Tipo de exame {typeFilter.length ? `(${typeFilter.length})` : ""}
+                    Tipo de procedimento {typeFilter.length ? `(${typeFilter.length})` : ""}
                     <ChevronDown className="size-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -273,12 +250,6 @@ export default function Painel() {
                 <Star className="size-4" /> Interessantes (
                 {records.filter((r) => r.interesting).length})
               </Button>
-              <Button
-                variant={onlyBoth ? "default" : "outline"}
-                onClick={() => setOnlyBoth((v) => !v)}
-              >
-                <Stethoscope className="size-4" /> EDA + Colono ({countBoth(records)})
-              </Button>
               <Button variant="outline" onClick={exportCSV}>
                 <Download className="size-4" /> Exportar CSV
               </Button>
@@ -317,7 +288,6 @@ export default function Painel() {
                     setTo("");
                     setOnlyBiopsy(false);
                     setOnlyInteresting(false);
-                    setOnlyBoth(false);
                     setTypeFilter([]);
                     setChiefFilter([]);
                   }}
@@ -340,8 +310,9 @@ export default function Painel() {
           </CardContent>
         </Card>
 
-        <RecordsTable
+        <ProceduresTable
           rows={filtered}
+          allTypes={types}
           selectedIds={selectedIds}
           onSelect={(id, value) =>
             setSelectedIds((prev) => {

@@ -9,19 +9,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Users } from "lucide-react";
-import {
-  countColonoscopias,
-  countEndoscopias,
-  countOutros,
-  countTotal,
-  type ExamRecord,
-} from "@/lib/exams-store";
+import { countTotalProcedimentos, type ProcedureRecord } from "@/lib/procedures-store";
 
-export function ChiefMetrics({
+export function ChiefTotals({
   rows,
   chiefs,
 }: {
-  rows: ExamRecord[];
+  rows: ProcedureRecord[];
   chiefs: string[];
 }) {
   const sortedChiefs = useMemo(
@@ -33,7 +27,7 @@ export function ChiefMetrics({
     <Card className="shadow-[var(--shadow-card)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Users className="size-5 text-primary" /> Métricas por chefe responsável
+          <Users className="size-5 text-primary" /> Total por chefe responsável
         </CardTitle>
       </CardHeader>
       <CardContent className="overflow-x-auto">
@@ -41,16 +35,13 @@ export function ChiefMetrics({
           <TableHeader>
             <TableRow>
               <TableHead>Chefe</TableHead>
-              <TableHead className="text-right">Endoscopias</TableHead>
-              <TableHead className="text-right">Colonoscopias</TableHead>
-              <TableHead className="text-right">Outros</TableHead>
               <TableHead className="text-right">Total</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sortedChiefs.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={2} className="text-center text-muted-foreground">
                   Nenhum chefe cadastrado.
                 </TableCell>
               </TableRow>
@@ -60,10 +51,9 @@ export function ChiefMetrics({
               return (
                 <TableRow key={c}>
                   <TableCell className="font-medium">{c}</TableCell>
-                  <TableCell className="text-right tabular-nums">{countEndoscopias(sub)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{countColonoscopias(sub)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{countOutros(sub)}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">{countTotal(sub)}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {countTotalProcedimentos(sub)}
+                  </TableCell>
                 </TableRow>
               );
             })}

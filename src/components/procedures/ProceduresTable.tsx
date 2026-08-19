@@ -11,18 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDateBR, recordTypes, type ExamRecord } from "@/lib/exams-store";
+import { formatDateBR, procedureTypes, type ProcedureRecord } from "@/lib/procedures-store";
+import { typeBadgeClass } from "@/lib/type-colors";
 
-const TYPE_STYLES: Record<string, string> = {
-  Endoscopia: "bg-chart-1/12 text-chart-1 border-chart-1/30",
-  Colonoscopia: "bg-chart-2/12 text-chart-2 border-chart-2/30",
-  "EDA + Colono": "bg-chart-3/12 text-chart-3 border-chart-3/30",
-  Gastrostomia: "bg-chart-4/12 text-chart-4 border-chart-4/30",
-  Ecoendoscopia: "bg-chart-5/12 text-chart-5 border-chart-5/30",
-};
-
-export function RecordsTable({
+export function ProceduresTable({
   rows,
+  allTypes,
   selectedIds,
   onEdit,
   onDelete,
@@ -31,11 +25,12 @@ export function RecordsTable({
   onSelectAll,
   onDeleteSelected,
 }: {
-  rows: ExamRecord[];
+  rows: ProcedureRecord[];
+  allTypes: string[];
   selectedIds: Set<string>;
-  onEdit: (r: ExamRecord) => void;
-  onDelete: (r: ExamRecord) => void;
-  onToggle: (r: ExamRecord, field: "biopsy" | "interesting", value: boolean) => void;
+  onEdit: (r: ProcedureRecord) => void;
+  onDelete: (r: ProcedureRecord) => void;
+  onToggle: (r: ProcedureRecord, field: "biopsy" | "interesting", value: boolean) => void;
   onSelect: (id: string, value: boolean) => void;
   onSelectAll: (value: boolean) => void;
   onDeleteSelected: () => void;
@@ -47,7 +42,7 @@ export function RecordsTable({
     <Card className="shadow-[var(--shadow-card)]">
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">
-          Registros{" "}
+          Procedimentos{" "}
           <span className="text-sm font-normal text-muted-foreground">({rows.length})</span>
         </CardTitle>
         {selectedIds.size > 0 && (
@@ -72,9 +67,9 @@ export function RecordsTable({
               </TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Paciente</TableHead>
-              <TableHead>Tipo de exame</TableHead>
+              <TableHead>Tipo de procedimento</TableHead>
               <TableHead>Chefe responsável</TableHead>
-              <TableHead>Achados endoscópicos</TableHead>
+              <TableHead>Achados</TableHead>
               <TableHead>Observação</TableHead>
               <TableHead className="text-center">Checar biópsia</TableHead>
               <TableHead className="text-center">Interessante</TableHead>
@@ -85,7 +80,7 @@ export function RecordsTable({
             {rows.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
-                  Nenhum exame encontrado.
+                  Nenhum procedimento encontrado.
                 </TableCell>
               </TableRow>
             )}
@@ -93,7 +88,7 @@ export function RecordsTable({
               <TableRow key={r.id}>
                 <TableCell className="text-center">
                   <Checkbox
-                    aria-label={`Selecionar exame de ${r.patient}`}
+                    aria-label={`Selecionar procedimento de ${r.patient}`}
                     checked={selectedIds.has(r.id)}
                     onCheckedChange={(v) => onSelect(r.id, v === true)}
                   />
@@ -102,12 +97,8 @@ export function RecordsTable({
                 <TableCell className="font-medium">{r.patient}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {recordTypes(r).map((t) => (
-                      <Badge
-                        key={t}
-                        variant="outline"
-                        className={TYPE_STYLES[t] ?? "bg-muted text-muted-foreground"}
-                      >
+                    {procedureTypes(r).map((t) => (
+                      <Badge key={t} variant="outline" className={typeBadgeClass(t, allTypes)}>
                         {t}
                       </Badge>
                     ))}
