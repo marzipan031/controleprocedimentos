@@ -26,6 +26,7 @@ const norm = (s: string) =>
 const FIELDS = {
   date: ["data", "data do procedimento", "data do exame", "data exame"],
   patient: ["paciente", "nome", "nome do paciente"],
+  encounterNumber: ["atendimento", "numero de atendimento", "no atendimento", "nº atendimento"],
   type: ["tipo", "tipo de procedimento", "tipo de exame", "procedimento", "exame"],
   chief: ["chefe", "chefe responsavel", "responsavel", "medico"],
   observation: ["observacao", "observacoes", "obs", "nota", "notas"],
@@ -118,6 +119,7 @@ export function ImportDialog({
           date: toISODate(pick(row, FIELDS.date)),
           type: parsedTypes.join(" + "),
           types: parsedTypes,
+          encounterNumber: String(pick(row, FIELDS.encounterNumber) ?? "").trim().slice(0, 60),
           chief,
 
           observation: String(pick(row, FIELDS.observation) ?? "").trim().slice(0, 500),

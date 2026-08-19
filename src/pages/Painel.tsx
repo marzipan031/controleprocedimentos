@@ -71,6 +71,7 @@ export default function Painel() {
       .filter((r) =>
         q
           ? r.patient.toLowerCase().includes(q) ||
+            (r.encounterNumber || "").toLowerCase().includes(q) ||
             r.chief.toLowerCase().includes(q) ||
             procedureTypes(r).join(" ").toLowerCase().includes(q) ||
             r.observation.toLowerCase().includes(q) ||
@@ -181,7 +182,7 @@ export default function Painel() {
                 <Input
                   id="q"
                   className="pl-9"
-                  placeholder="Paciente, chefe ou tipo de procedimento"
+                  placeholder="Paciente, atendimento, chefe ou tipo de procedimento"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />

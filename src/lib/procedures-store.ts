@@ -8,6 +8,8 @@ export type ProcedureRecord = {
   type: string;
   /** Lista de tipos marcados. Fonte da verdade. */
   types?: string[];
+  /** Número de atendimento do paciente (opcional). */
+  encounterNumber?: string;
   chief: string;
   observation: string;
   findings?: string;
@@ -230,6 +232,7 @@ export function toCSV(rows: ProcedureRecord[]) {
   const head = [
     "Data",
     "Paciente",
+    "Atendimento",
     "Tipo de Procedimento",
     "Chefe Responsável",
     "Observação",
@@ -242,6 +245,7 @@ export function toCSV(rows: ProcedureRecord[]) {
     [
       formatDateBR(r.date),
       r.patient,
+      r.encounterNumber || "-",
       r.type,
       r.chief || "-",
       r.observation || "-",

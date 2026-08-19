@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { procedureTypes, todayISO, type ProcedureRecord } from "@/lib/procedures-store";
 import { ManageListDialog } from "./ManageListDialog";
+import { LabelScanDialog } from "./LabelScanDialog";
 
 type Props = {
   types: string[];
@@ -31,6 +32,7 @@ type Props = {
     date: string;
     type: string;
     types: string[];
+    encounterNumber: string;
     chief: string;
     observation: string;
     findings: string;
@@ -52,6 +54,7 @@ export function ProcedureForm({
 }: Props) {
   const [patient, setPatient] = useState("");
   const [date, setDate] = useState(todayISO());
+  const [encounterNumber, setEncounterNumber] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [chief, setChief] = useState("");
 
@@ -64,6 +67,7 @@ export function ProcedureForm({
     if (editing) {
       setPatient(editing.patient);
       setDate(editing.date);
+      setEncounterNumber(editing.encounterNumber || "");
       setSelectedTypes(procedureTypes(editing));
       setChief(editing.chief);
       setObservation(editing.observation || "");
@@ -76,6 +80,7 @@ export function ProcedureForm({
   const reset = () => {
     setPatient("");
     setDate(todayISO());
+    setEncounterNumber("");
     setSelectedTypes([]);
     setChief("");
     setObservation("");
@@ -108,6 +113,7 @@ export function ProcedureForm({
       date,
       type: selectedTypes.join(" + "),
       types: selectedTypes,
+      encounterNumber: encounterNumber.trim(),
       chief,
       observation: observation.trim(),
       findings: findings.trim(),
@@ -125,6 +131,12 @@ export function ProcedureForm({
           {editing ? "Editar procedimento" : "Adicionar procedimento"}
         </CardTitle>
         <div className="flex flex-wrap gap-2">
+          <LabelScanDialog
+            onExtracted={(data) => {
+              if (data.patient) setPatient(data.patient);
+              if (data.date) setDate(data.date);
+            }}
+          />
           <ManageListDialog
             title="Gerenciar tipos de procedimento"
             description="Adicione ou remova os tipos disponíveis no formulário. Cada tipo novo ganha automaticamente um card de contagem em Estatísticas."
@@ -166,6 +178,16 @@ export function ProcedureForm({
           <div className="space-y-2">
             <Label htmlFor="date">Data do procedimento</Label>
             <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="encounter">Atendimento</Label>
+            <Input
+              id="encounter"
+              value={encounterNumber}
+              maxLength={60}
+              onChange={(e) => setEncounterNumber(e.target.value)}
+              placeholder="Nº do atendimento"
+            />
           </div>
           <div className="space-y-2 sm:col-span-2 lg:col-span-2">
             <Label>Tipos de procedimento (marque um ou mais)</Label>

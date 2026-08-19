@@ -67,6 +67,7 @@ export function ProceduresTable({
               </TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Paciente</TableHead>
+              <TableHead>Atendimento</TableHead>
               <TableHead>Tipo de procedimento</TableHead>
               <TableHead>Chefe responsável</TableHead>
               <TableHead>Achados</TableHead>
@@ -79,7 +80,7 @@ export function ProceduresTable({
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
                   Nenhum procedimento encontrado.
                 </TableCell>
               </TableRow>
@@ -95,6 +96,9 @@ export function ProceduresTable({
                 </TableCell>
                 <TableCell className="whitespace-nowrap tabular-nums">{formatDateBR(r.date)}</TableCell>
                 <TableCell className="font-medium">{r.patient}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">
+                  {r.encounterNumber || "-"}
+                </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
                     {procedureTypes(r).map((t) => (
