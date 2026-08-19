@@ -28,12 +28,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { AccountMenu } from "@/components/procedures/AccountMenu";
 import { TypeCards } from "@/components/procedures/TypeCards";
 import { HistoricalCounts } from "@/components/procedures/HistoricalCounts";
 import { NewCardDialog } from "@/components/procedures/NewCardDialog";
 import { ChiefTotals } from "@/components/procedures/ChiefTotals";
-import { CHART_PALETTE, typeChartColor } from "@/lib/type-colors";
+import { CHART_PALETTE, typeBadgeClass, typeChartColor } from "@/lib/type-colors";
 import {
   formatDateBR,
   procedureTypes,
@@ -533,11 +541,58 @@ export default function Estatisticas() {
           </TabsContent>
         </Tabs>
 
-        {rows.length === 0 && (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Nenhum registro encontrado para os filtros selecionados.
-          </p>
-        )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+            <CardTitle className="text-base">
+              Registros filtrados{" "}
+              <span className="text-sm font-normal text-muted-foreground">({rows.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            {rows.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Nenhum registro encontrado para os filtros selecionados.
+              </p>
+            ) : (
+              <div className="max-h-[480px] overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Paciente</TableHead>
+                      <TableHead>Atendimento</TableHead>
+                      <TableHead>Tipo de procedimento</TableHead>
+                      <TableHead>Chefe</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="whitespace-nowrap tabular-nums">
+                          {formatDateBR(r.date)}
+                        </TableCell>
+                        <TableCell className="font-medium">{r.patient}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {r.encounterNumber || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {procedureTypes(r).map((t) => (
+                              <Badge key={t} variant="outline" className={typeBadgeClass(t, allTypes)}>
+                                {t}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>{r.chief || "-"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

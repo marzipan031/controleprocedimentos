@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import {
   BarChart3,
   CheckCircle2,
@@ -70,8 +70,12 @@ export default function Landing() {
     document.title = "Gestão de Procedimentos Médicos";
   }, []);
 
-  const { configured, session, profile } = useAuth();
+  const { configured, loading, session, profile } = useAuth();
   const isApproved = configured && !!session && profile?.status === "approved";
+
+  if (!loading && isApproved) {
+    return <Navigate to="/painel" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

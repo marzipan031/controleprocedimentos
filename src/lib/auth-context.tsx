@@ -1,6 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import { isSupabaseConfigured, supabase } from "./supabase";
+
+/** Desloga automaticamente após esse tempo sem interação, para todos os usuários. */
+const IDLE_LOGOUT_MS = 30 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"] as const;
 
 export type ProfileStatus = "pending" | "approved" | "rejected";
 export type ProfileRole = "admin" | "user";
@@ -73,6 +78,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !session) return;
+
+    const resetTimer = () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = setTimeout(() => {
+        toast.info("Sessão encerrada por inatividade.");
+        void supabase.auth.signOut();
+      }, IDLE_LOGOUT_MS);
+    };
+
+    ACTIVITY_EVENTS.forEach((evt) => window.addEventListener(evt, resetTimer, { passive: true }));
+    resetTimer();
+
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      ACTIVITY_EVENTS.forEach((evt) => window.removeEventListener(evt, resetTimer));
+    };
+  }, [session]);
 
   const signIn: AuthContextValue["signIn"] = async (email, password) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
