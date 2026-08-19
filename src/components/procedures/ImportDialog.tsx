@@ -60,31 +60,41 @@ function pick(row: Record<string, unknown>, keys: string[]) {
   return undefined;
 }
 
+/**
+ * Datas de texto são sempre lidas como DD-MM-AAAA (nunca o formato
+ * americano MM-DD-AAAA), mesmo com separador diferente ou horário junto.
+ * Não usamos `new Date(string)` do JS aqui de propósito: o parser nativo
+ * interpreta "03/04/2026" como mês/dia (formato americano).
+ */
 function toISODate(value: unknown): string {
   if (value == null || value === "") return todayISO();
   if (typeof value === "number") {
-    const d = XLSX.SSF.parse_date_code(value);
+    // Arredonda antes de decodificar: datas "meia-noite" às vezes chegam como
+    // um serial ligeiramente abaixo do inteiro (ex.: 46114.9996...), o que faz
+    // o dia sair errado por causa da fração de segundo residual.
+    const d = XLSX.SSF.parse_date_code(Math.round(value));
     if (d) {
       const p = (n: number) => String(n).padStart(2, "0");
       return `${d.y}-${p(d.m)}-${p(d.d)}`;
     }
   }
   const s = String(value).trim();
-  const br = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
-  if (br) {
-    const d = br[1]!;
-    const m = br[2]!;
-    const y = br[3]!;
-    const year = y.length === 2 ? `20${y}` : y;
-    return `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
+
   const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (iso) return iso[0];
-  const parsed = new Date(s);
-  if (!Number.isNaN(parsed.getTime())) {
-    const p = (n: number) => String(n).padStart(2, "0");
-    return `${parsed.getFullYear()}-${p(parsed.getMonth() + 1)}-${p(parsed.getDate())}`;
+
+  const br = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})/);
+  if (br) {
+    const day = Number(br[1]);
+    const month = Number(br[2]);
+    const y = br[3]!;
+    const year = y.length === 2 ? `20${y}` : y;
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const p = (n: number) => String(n).padStart(2, "0");
+      return `${year}-${p(month)}-${p(day)}`;
+    }
   }
+
   return todayISO();
 }
 
@@ -99,14 +109,19 @@ export function ImportDialog({
   const handleFile = async (file: File) => {
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
+      // raw + cellDates:false evita que o CSV converta datas ambíguas (ex.: "03/04/2026")
+      // em número usando a ordem mês/dia americana antes de chegarmos a toISODate().
+      const wb = XLSX.read(buf, { type: "array", raw: true, cellText: true, cellDates: false });
       const first = wb.SheetNames[0];
       const sheet = first ? wb.Sheets[first] : undefined;
       if (!sheet) {
         toast.error("Planilha vazia.");
         return;
       }
-      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+      const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
+        defval: "",
+        raw: true,
+      });
       const rows: NewRecord[] = [];
       for (const row of json) {
         const patient = String(pick(row, FIELDS.patient) ?? "").trim();
@@ -153,9 +168,8 @@ export function ImportDialog({
         <DialogHeader>
           <DialogTitle>Importar Excel ou CSV</DialogTitle>
           <DialogDescription>
-            O arquivo deve ter uma linha de cabeçalho com as colunas: Data, Paciente, Tipo de
-            Procedimento, Chefe Responsável e Observação (opcional). Tipos e chefes novos são
-            cadastrados automaticamente.
+            O programa importa e usa as colunas que encontrar no arquivo. Tipos e chefes novos
+            são cadastrados automaticamente.
           </DialogDescription>
         </DialogHeader>
         <input
