@@ -103,10 +103,6 @@ export function ProcedureForm({
       toast.error("Marque ao menos um tipo de procedimento.");
       return;
     }
-    if (!chief) {
-      toast.error("Selecione o chefe responsável.");
-      return;
-    }
     onSubmit({
       patient: name,
       date,
@@ -197,12 +193,16 @@ export function ProcedureForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Chefe responsável</Label>
-            <Select value={chief} onValueChange={setChief}>
+            <Label>Chefe responsável (opcional)</Label>
+            <Select
+              value={chief || "__none__"}
+              onValueChange={(v) => setChief(v === "__none__" ? "" : v)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">Nenhum</SelectItem>
                 {chiefs.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}

@@ -243,7 +243,7 @@ export function toCSV(rows: ProcedureRecord[]) {
       formatDateBR(r.date),
       r.patient,
       r.type,
-      r.chief,
+      r.chief || "-",
       r.observation || "-",
       r.findings || "-",
       r.biopsy ? "Sim" : "Não",

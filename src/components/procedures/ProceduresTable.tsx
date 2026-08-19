@@ -105,7 +105,7 @@ export function ProceduresTable({
                   </div>
                 </TableCell>
 
-                <TableCell>{r.chief}</TableCell>
+                <TableCell>{r.chief || "-"}</TableCell>
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.findings || undefined}>
                   {r.findings || "-"}
                 </TableCell>
