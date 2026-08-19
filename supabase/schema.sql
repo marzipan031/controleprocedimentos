@@ -87,10 +87,10 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Fim. Depois de rodar este script:
---   • Authentication → Providers → Email → desligue "Confirm email"
---     (a aprovação do admin já serve como o gate de acesso; deixar as duas
---     checagens ligadas obriga o usuário a confirmar email E esperar
---     aprovação, o que costuma confundir).
+--   • "Confirm email" (Authentication → Providers → Email) fica ligado de
+--     propósito: cadastro passa por confirmar o email E ser aprovado pelo
+--     admin. Se quiser só a aprovação do admin como gate único, desligue
+--     essa opção — o app já trata os dois casos.
 --   • Authentication → URL Configuration → Redirect URLs → adicione
 --     a URL de produção + /redefinir-senha (e http://localhost:5173/redefinir-senha
 --     para desenvolvimento).

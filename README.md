@@ -30,8 +30,10 @@ login.
    cria a tabela `profiles`, as políticas de RLS e o gatilho que cria um
    perfil automaticamente a cada cadastro (aprovando de cara o email definido
    como admin ali dentro).
-3. Em **Authentication → Providers → Email**, desligue "Confirm email" (a
-   aprovação do admin já serve como o gate de acesso).
+3. "Confirm email" (**Authentication → Providers → Email**) fica **ligado** de
+   propósito nesta instalação: o cadastro passa por duas checagens — confirmar
+   o email pelo link E ser aprovado pelo admin. Se preferir só a aprovação do
+   admin como gate único, desligue essa opção (o app já trata os dois casos).
 4. Em **Authentication → URL Configuration → Redirect URLs**, adicione
    `http://localhost:5173/redefinir-senha` (dev) e a URL de produção +
    `/redefinir-senha` depois do deploy.

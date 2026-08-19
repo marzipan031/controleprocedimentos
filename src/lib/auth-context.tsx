@@ -32,6 +32,8 @@ function translateAuthError(message: string): string {
   if (message.includes("Invalid login credentials")) return "Email ou senha inválidos.";
   if (message.includes("User already registered")) return "Esse email já está cadastrado.";
   if (message.includes("Email not confirmed")) return "Confirme seu email antes de entrar.";
+  if (message.includes("email rate limit exceeded"))
+    return "Muitos emails enviados em pouco tempo. Aguarde alguns minutos e tente de novo.";
   return message;
 }
 

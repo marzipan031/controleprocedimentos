@@ -98,7 +98,9 @@ export default function Login() {
       toast.error(error);
       return;
     }
-    toast.success("Cadastro enviado! Aguarde a aprovação do administrador para entrar.");
+    toast.success(
+      "Cadastro enviado! Confirme seu email pelo link que enviamos e aguarde a aprovação do administrador para entrar.",
+    );
     setMode("login");
     setSignupEmail("");
     setSignupPassword("");
