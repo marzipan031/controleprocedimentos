@@ -113,7 +113,7 @@ export default function Cadastros() {
             <p className="text-sm opacity-90">Aprovação de novos usuários</p>
           </div>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/">
+            <Link to="/painel">
               <ChevronLeft className="mr-1 size-4" /> Voltar ao painel
             </Link>
           </Button>

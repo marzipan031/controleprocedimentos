@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth-context";
 import { RequireAdmin, RequireAuth } from "@/lib/route-guards";
+import Landing from "@/pages/Landing";
 import Painel from "@/pages/Painel";
 import Estatisticas from "@/pages/Estatisticas";
 import Login from "@/pages/Login";
@@ -14,10 +15,11 @@ function App() {
       <AuthProvider>
         <Toaster />
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/redefinir-senha" element={<ResetPassword />} />
           <Route
-            path="/"
+            path="/painel"
             element={
               <RequireAuth>
                 <Painel />

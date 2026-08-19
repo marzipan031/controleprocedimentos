@@ -82,7 +82,7 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
     );
   }
 
-  if (profile?.role !== "admin") return <Navigate to="/" replace />;
+  if (profile?.role !== "admin") return <Navigate to="/painel" replace />;
 
   return <>{children}</>;
 }

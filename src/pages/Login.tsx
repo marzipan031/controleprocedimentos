@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Circle, HeartPulse, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,10 @@ export default function Login() {
   }, []);
 
   const { configured, session, profile, loading, signIn, signUp, requestPasswordReset } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(
+    searchParams.get("mode") === "signup" ? "signup" : "login",
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -70,7 +73,7 @@ export default function Login() {
   }
 
   if (!loading && session && profile?.status === "approved") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/painel" replace />;
   }
 
   const submitLogin = async (e: React.FormEvent) => {
@@ -123,9 +126,13 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <Card className="w-full max-w-md shadow-[var(--shadow-card)]">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-[image:var(--gradient-header)] text-primary-foreground">
+          <Link
+            to="/"
+            className="mb-2 flex size-12 items-center justify-center rounded-full bg-[image:var(--gradient-header)] text-primary-foreground transition-opacity hover:opacity-90"
+            aria-label="Voltar para a página inicial"
+          >
             <HeartPulse className="size-6" />
-          </div>
+          </Link>
           <CardTitle>Gestão de Procedimentos Médicos</CardTitle>
           <CardDescription>
             {mode === "forgot" ? "Recuperar senha" : "Entre ou cadastre-se para continuar"}

@@ -37,6 +37,7 @@ import { CHART_PALETTE, typeChartColor } from "@/lib/type-colors";
 import {
   formatDateBR,
   procedureTypes,
+  todayISO,
   useProceduresData,
 } from "@/lib/procedures-store";
 
@@ -44,6 +45,48 @@ const monthLabel = (ym: string) => {
   const [y, m] = ym.split("-");
   return `${m}/${y}`;
 };
+
+const isoOf = (d: Date) => {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+type PeriodPreset = "hoje" | "7dias" | "30dias" | "mes" | "ano" | "tudo";
+
+const PERIOD_PRESETS: { id: PeriodPreset; label: string }[] = [
+  { id: "hoje", label: "Hoje" },
+  { id: "7dias", label: "7 dias" },
+  { id: "30dias", label: "30 dias" },
+  { id: "mes", label: "Este mês" },
+  { id: "ano", label: "Este ano" },
+  { id: "tudo", label: "Tudo" },
+];
+
+function presetRange(id: PeriodPreset): { from: string; to: string } {
+  const now = new Date();
+  const today = todayISO();
+  switch (id) {
+    case "hoje":
+      return { from: today, to: today };
+    case "7dias": {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 6);
+      return { from: isoOf(d), to: today };
+    }
+    case "30dias": {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 29);
+      return { from: isoOf(d), to: today };
+    }
+    case "mes":
+      return { from: isoOf(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
+    case "ano":
+      return { from: isoOf(new Date(now.getFullYear(), 0, 1)), to: today };
+    case "tudo":
+    default:
+      return { from: "", to: "" };
+  }
+}
 
 type ChiefRow = { chief: string; total: number; values: Record<string, number> };
 type MonthRow = { month: string; label: string; total: number; values: Record<string, number> };
@@ -72,21 +115,36 @@ export default function Estatisticas() {
   const [chiefFilter, setChiefFilter] = useState<string[]>([]);
   const [onlyBiopsy, setOnlyBiopsy] = useState(false);
   const [onlyInteresting, setOnlyInteresting] = useState(false);
+  const [patientFilter, setPatientFilter] = useState("");
 
   const toggleIn = (list: string[], v: string) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
 
-  const rows = useMemo(
-    () =>
-      records
-        .filter((r) => (from ? r.date >= from : true))
-        .filter((r) => (to ? r.date <= to : true))
-        .filter((r) => (onlyBiopsy ? !!r.biopsy : true))
-        .filter((r) => (onlyInteresting ? !!r.interesting : true))
-        .filter((r) => (typeFilter.length ? procedureTypes(r).some((t) => typeFilter.includes(t)) : true))
-        .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true)),
-    [records, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter],
-  );
+  const applyPreset = (id: PeriodPreset) => {
+    const range = presetRange(id);
+    setFrom(range.from);
+    setTo(range.to);
+  };
+
+  const activePreset = useMemo<PeriodPreset | null>(() => {
+    for (const p of PERIOD_PRESETS) {
+      const range = presetRange(p.id);
+      if (range.from === from && range.to === to) return p.id;
+    }
+    return null;
+  }, [from, to]);
+
+  const rows = useMemo(() => {
+    const nameQuery = patientFilter.trim().toLowerCase();
+    return records
+      .filter((r) => (from ? r.date >= from : true))
+      .filter((r) => (to ? r.date <= to : true))
+      .filter((r) => (onlyBiopsy ? !!r.biopsy : true))
+      .filter((r) => (onlyInteresting ? !!r.interesting : true))
+      .filter((r) => (typeFilter.length ? procedureTypes(r).some((t) => typeFilter.includes(t)) : true))
+      .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true))
+      .filter((r) => (nameQuery ? r.patient.toLowerCase().includes(nameQuery) : true));
+  }, [records, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter, patientFilter]);
 
   const allTypes = useMemo(() => {
     const set = new Set<string>(types);
@@ -160,6 +218,7 @@ export default function Estatisticas() {
     (to ? 1 : 0) +
     (onlyBiopsy ? 1 : 0) +
     (onlyInteresting ? 1 : 0) +
+    (patientFilter.trim() ? 1 : 0) +
     typeFilter.length +
     chiefFilter.length;
 
@@ -170,6 +229,7 @@ export default function Estatisticas() {
     setChiefFilter([]);
     setOnlyBiopsy(false);
     setOnlyInteresting(false);
+    setPatientFilter("");
   };
 
   const period =
@@ -190,7 +250,7 @@ export default function Estatisticas() {
             <p className="text-sm opacity-90">Contagens, métricas por chefe e gráficos</p>
           </div>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/">
+            <Link to="/painel">
               <ChevronLeft className="mr-1 size-4" /> Voltar ao painel
             </Link>
           </Button>
@@ -202,12 +262,36 @@ export default function Estatisticas() {
         <Card>
           <CardContent className="flex flex-wrap items-end gap-3 pt-6">
             <div className="grid gap-1">
+              <Label htmlFor="patient-search">Paciente</Label>
+              <Input
+                id="patient-search"
+                value={patientFilter}
+                onChange={(e) => setPatientFilter(e.target.value)}
+                placeholder="Buscar por nome"
+                className="w-44"
+              />
+            </div>
+            <div className="grid gap-1">
               <Label htmlFor="from">De</Label>
               <Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </div>
             <div className="grid gap-1">
               <Label htmlFor="to">Até</Label>
               <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {PERIOD_PRESETS.map((p) => (
+                <Button
+                  key={p.id}
+                  type="button"
+                  size="sm"
+                  variant={activePreset === p.id ? "default" : "outline"}
+                  onClick={() => applyPreset(p.id)}
+                >
+                  {p.label}
+                </Button>
+              ))}
             </div>
 
             <DropdownMenu>
