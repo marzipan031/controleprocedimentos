@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { BarChart3, ChevronDown, ChevronLeft, FlaskConical, Star } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeftRight,
+  BarChart3,
+  ChevronDown,
+  ChevronLeft,
+  FlaskConical,
+  Loader2,
+  Star,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -42,6 +50,8 @@ import { HistoricalCounts } from "@/components/procedures/HistoricalCounts";
 import { NewCardDialog } from "@/components/procedures/NewCardDialog";
 import { ChiefTotals } from "@/components/procedures/ChiefTotals";
 import { CHART_PALETTE, typeBadgeClass, typeChartColor } from "@/lib/type-colors";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import {
   formatDateBR,
   procedureTypes,
@@ -104,7 +114,33 @@ export default function Estatisticas() {
     document.title = "Estatísticas de Procedimentos | Gráficos e Filtros";
   }, []);
 
+  const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const viewUserId =
+    profile?.role === "admin" ? (searchParams.get("as") ?? undefined) : undefined;
+  const [viewUserEmail, setViewUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewUserId) {
+      setViewUserEmail(null);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", viewUserId)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setViewUserEmail((data?.email as string) ?? viewUserId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewUserId]);
+
   const {
+    loading,
     records,
     types,
     chiefs,
@@ -115,7 +151,7 @@ export default function Estatisticas() {
     removeHistoricalCount,
     addComboCard,
     removeComboCard,
-  } = useProceduresData();
+  } = useProceduresData(viewUserId);
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -248,6 +284,14 @@ export default function Estatisticas() {
           return `${formatDateBR(dates[0] ?? "")} – ${formatDateBR(dates[dates.length - 1] ?? "")}`;
         })();
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-[image:var(--gradient-header)] text-primary-foreground">
@@ -258,7 +302,7 @@ export default function Estatisticas() {
             <p className="text-sm opacity-90">Contagens, métricas por chefe e gráficos</p>
           </div>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/painel">
+            <Link to={viewUserId ? `/painel?as=${viewUserId}` : "/painel"}>
               <ChevronLeft className="mr-1 size-4" /> Voltar ao painel
             </Link>
           </Button>
@@ -267,6 +311,19 @@ export default function Estatisticas() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+        {viewUserId && (
+          <Card className="border-primary/30 bg-primary/5 shadow-[var(--shadow-card)]">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+              <div className="flex items-center gap-2 text-sm">
+                <ArrowLeftRight className="size-4 text-primary" />
+                Vendo estatísticas de <strong>{viewUserEmail ?? "..."}</strong>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/estatisticas">Voltar às minhas estatísticas</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardContent className="flex flex-wrap items-end gap-3 pt-6">
             <div className="grid gap-1">

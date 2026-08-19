@@ -1,10 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ClipboardCheck, Loader2, Trash2 } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronLeft,
+  ClipboardCheck,
+  ClipboardList,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -156,7 +170,28 @@ export default function Cadastros() {
                       )}
                       {filtered.map((p) => (
                         <TableRow key={p.id}>
-                          <TableCell className="font-medium">{p.email}</TableCell>
+                          <TableCell className="font-medium">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-auto px-1.5 py-1 font-medium">
+                                  {p.email}
+                                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/painel?as=${p.id}`}>
+                                    <ClipboardList className="size-4" /> Ver procedimentos
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/estatisticas?as=${p.id}`}>
+                                    <BarChart3 className="size-4" /> Ver estatísticas
+                                  </Link>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                           <TableCell>
                             <Badge variant={STATUS_VARIANT[p.status]}>
                               {STATUS_LABEL[p.status]}

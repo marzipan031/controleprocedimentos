@@ -113,7 +113,7 @@ export function ProceduresTable({
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.findings || undefined}>
                   {r.findings || "-"}
                 </TableCell>
-                <TableCell className="max-w-xs truncate text-muted-foreground" title={r.observation || undefined}>
+                <TableCell className="max-w-32 truncate text-muted-foreground" title={r.observation || undefined}>
                   {r.observation || "-"}
                 </TableCell>
                 <TableCell className="text-center">

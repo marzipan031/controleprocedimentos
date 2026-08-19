@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { BarChart3, ChevronDown, Download, FlaskConical, HeartPulse, Search, Star, Undo2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeftRight,
+  BarChart3,
+  ChevronDown,
+  Download,
+  FlaskConical,
+  HeartPulse,
+  Loader2,
+  Search,
+  Star,
+  Undo2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +39,9 @@ import { AccountMenu } from "@/components/procedures/AccountMenu";
 import { ProcedureForm } from "@/components/procedures/ProcedureForm";
 import { ProceduresTable } from "@/components/procedures/ProceduresTable";
 import { ImportDialog } from "@/components/procedures/ImportDialog";
+import { MigrateLocalData } from "@/components/procedures/MigrateLocalData";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import {
   procedureTypes,
   toCSV,
@@ -40,7 +54,33 @@ export default function Painel() {
     document.title = "Painel de Procedimentos | Registro";
   }, []);
 
+  const { profile } = useAuth();
+  const [searchParams] = useSearchParams();
+  const viewUserId =
+    profile?.role === "admin" ? (searchParams.get("as") ?? undefined) : undefined;
+  const [viewUserEmail, setViewUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewUserId) {
+      setViewUserEmail(null);
+      return;
+    }
+    let cancelled = false;
+    void supabase
+      .from("profiles")
+      .select("email")
+      .eq("id", viewUserId)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setViewUserEmail((data?.email as string) ?? viewUserId);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewUserId]);
+
   const {
+    loading,
     records,
     types,
     chiefs,
@@ -50,7 +90,7 @@ export default function Painel() {
     restoreRecords,
     setTypes,
     setChiefs,
-  } = useProceduresData();
+  } = useProceduresData(viewUserId);
 
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState("");
@@ -141,7 +181,7 @@ export default function Painel() {
             <p className="text-sm opacity-90">Registro e lista de procedimentos</p>
           </div>
           <Button asChild variant="secondary" size="sm">
-            <Link to="/estatisticas">
+            <Link to={viewUserId ? `/estatisticas?as=${viewUserId}` : "/estatisticas"}>
               <BarChart3 className="mr-1 size-4" /> Estatísticas
             </Link>
           </Button>
@@ -150,6 +190,27 @@ export default function Painel() {
       </header>
 
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <>
+        {viewUserId && (
+          <Card className="border-primary/30 bg-primary/5 shadow-[var(--shadow-card)]">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+              <div className="flex items-center gap-2 text-sm">
+                <ArrowLeftRight className="size-4 text-primary" />
+                Vendo procedimentos de <strong>{viewUserEmail ?? "..."}</strong>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/painel">Voltar aos meus procedimentos</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        {!viewUserId && <MigrateLocalData onDone={() => window.location.reload()} />}
+        {!viewUserId && (
         <div ref={formRef}>
           <ProcedureForm
             types={types}
@@ -172,6 +233,7 @@ export default function Painel() {
             }}
           />
         </div>
+        )}
 
         <Card className="shadow-[var(--shadow-card)]">
           <CardContent className="grid gap-4 py-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -334,6 +396,8 @@ export default function Painel() {
           onDeleteSelected={() => setConfirmBulk(true)}
           onToggle={(r, field, value) => updateRecord(r.id, { [field]: value })}
         />
+          </>
+        )}
       </main>
 
       <AlertDialog open={confirmBulk} onOpenChange={setConfirmBulk}>
