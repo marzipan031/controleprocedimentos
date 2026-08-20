@@ -275,6 +275,38 @@ function rowToHistorical(row: { id: string; type: string; value: number }): Hist
 }
 
 /**
+ * O Supabase limita cada resposta a 1000 linhas por padrão — sem paginar,
+ * quem tem mais de 1000 procedimentos via só os mais recentes e os mais
+ * antigos "somem" (na verdade continuam no banco, só não são buscados).
+ * Aqui buscamos em páginas até trazer tudo.
+ */
+async function fetchAllProcedures(targetId: string): Promise<{
+  data: ProcedureRow[] | null;
+  error: { message: string } | null;
+}> {
+  const pageSize = 1000;
+  const all: ProcedureRow[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("procedures")
+      .select("*")
+      .eq("created_by", targetId)
+      .order("date", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) return { data: null, error };
+    const batch = (data as ProcedureRow[] | null) ?? [];
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return { data: all, error: null };
+}
+
+/**
  * Dados compartilhados da equipe na nuvem (Supabase), protegidos por login.
  *
  * Por padrão só traz os PRÓPRIOS procedimentos, mesmo para admin — os
@@ -303,17 +335,17 @@ function useCloudProceduresData(viewUserId?: string) {
       }
 
       const [recRes, typesRes, chiefsRes, histRes, comboRes] = await Promise.all([
-        supabase
-          .from("procedures")
-          .select("*")
-          .eq("created_by", targetId)
-          .order("date", { ascending: false }),
+        fetchAllProcedures(targetId),
         supabase.from("procedure_types").select("*").order("created_at", { ascending: true }),
         supabase.from("chiefs").select("*").order("created_at", { ascending: true }),
         supabase.from("historical_counts").select("*"),
         supabase.from("combo_cards").select("*"),
       ]);
       if (cancelled) return;
+
+      if (recRes.error) {
+        toast.error("Não foi possível carregar todos os procedimentos da nuvem.");
+      }
 
       let typeNames = (typesRes.data ?? []).map((r) => r.name as string);
       let chiefNames = (chiefsRes.data ?? []).map((r) => r.name as string);
