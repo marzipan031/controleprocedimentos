@@ -40,7 +40,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { type Profile, type ProfileStatus } from "@/lib/auth-context";
-import { formatDateBR } from "@/lib/procedures-store";
+import { brazilDateFromTimestamp, formatDateBR } from "@/lib/procedures-store";
 
 const STATUS_LABEL: Record<ProfileStatus, string> = {
   pending: "Pendente",
@@ -198,7 +198,7 @@ export default function Cadastros() {
                             </Badge>
                           </TableCell>
                           <TableCell className="tabular-nums">
-                            {formatDateBR(p.created_at.slice(0, 10))}
+                            {formatDateBR(brazilDateFromTimestamp(p.created_at))}
                           </TableCell>
                           <TableCell className="space-x-2 text-right">
                             {p.status !== "approved" && (

@@ -682,6 +682,18 @@ export function formatDateBR(iso: string) {
   return d && m && y ? `${d}/${m}/${y}` : iso;
 }
 
+/**
+ * Converte um timestamp UTC (ex.: created_at do Supabase, tipo
+ * "2026-08-20T23:47:00+00:00") para a data local do Brasil (AAAA-MM-DD).
+ * Sem isso, um cadastro feito após ~21h no Brasil cai no dia seguinte em
+ * UTC e mostra a data errada.
+ */
+export function brazilDateFromTimestamp(isoTimestamp: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(
+    new Date(isoTimestamp),
+  );
+}
+
 export function todayISO() {
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, "0");
