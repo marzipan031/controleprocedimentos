@@ -24,6 +24,7 @@ export function ProceduresTable({
   onSelect,
   onSelectAll,
   onDeleteSelected,
+  onPatientClick,
 }: {
   rows: ProcedureRecord[];
   allTypes: string[];
@@ -34,6 +35,7 @@ export function ProceduresTable({
   onSelect: (id: string, value: boolean) => void;
   onSelectAll: (value: boolean) => void;
   onDeleteSelected: () => void;
+  onPatientClick?: (patient: string) => void;
 }) {
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id)) && !allSelected;
@@ -71,6 +73,7 @@ export function ProceduresTable({
               <TableHead>Tipo de procedimento</TableHead>
               <TableHead>Chefe responsável</TableHead>
               <TableHead>Achados</TableHead>
+              <TableHead>Anatomopatológico</TableHead>
               <TableHead>Observação</TableHead>
               <TableHead className="text-center">Checar biópsia</TableHead>
               <TableHead className="text-center">Interessante</TableHead>
@@ -80,7 +83,7 @@ export function ProceduresTable({
           <TableBody>
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={12} className="py-10 text-center text-muted-foreground">
                   Nenhum procedimento encontrado.
                 </TableCell>
               </TableRow>
@@ -95,7 +98,20 @@ export function ProceduresTable({
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap tabular-nums">{formatDateBR(r.date)}</TableCell>
-                <TableCell className="font-medium">{r.patient}</TableCell>
+                <TableCell className="font-medium">
+                  {onPatientClick ? (
+                    <button
+                      type="button"
+                      className="text-left underline-offset-2 hover:underline"
+                      title={`Ver todos os procedimentos de ${r.patient}`}
+                      onClick={() => onPatientClick(r.patient)}
+                    >
+                      {r.patient}
+                    </button>
+                  ) : (
+                    r.patient
+                  )}
+                </TableCell>
                 <TableCell className="whitespace-nowrap text-muted-foreground">
                   {r.encounterNumber || "-"}
                 </TableCell>
@@ -112,6 +128,12 @@ export function ProceduresTable({
                 <TableCell>{r.chief || "-"}</TableCell>
                 <TableCell className="max-w-xs truncate text-muted-foreground" title={r.findings || undefined}>
                   {r.findings || "-"}
+                </TableCell>
+                <TableCell
+                  className="max-w-32 truncate text-muted-foreground"
+                  title={r.pathologyReport || undefined}
+                >
+                  {r.pathologyReport || "-"}
                 </TableCell>
                 <TableCell className="max-w-32 truncate text-muted-foreground" title={r.observation || undefined}>
                   {r.observation || "-"}

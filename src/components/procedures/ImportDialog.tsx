@@ -31,6 +31,7 @@ const FIELDS = {
   chief: ["chefe", "chefe responsavel", "responsavel", "medico"],
   observation: ["observacao", "observacoes", "obs", "nota", "notas"],
   findings: ["achados", "achados endoscopicos", "achado"],
+  pathologyReport: ["laudo anatomopatologico", "anatomopatologico", "laudo"],
   biopsy: ["biopsia", "checar biopsia", "checar biópsia"],
   interesting: ["interessante"],
 };
@@ -139,6 +140,7 @@ export function ImportDialog({
 
           observation: String(pick(row, FIELDS.observation) ?? "").trim().slice(0, 500),
           findings: String(pick(row, FIELDS.findings) ?? "").trim().slice(0, 1000),
+          pathologyReport: String(pick(row, FIELDS.pathologyReport) ?? "").trim().slice(0, 2000),
           biopsy: truthy(pick(row, FIELDS.biopsy)),
           interesting: truthy(pick(row, FIELDS.interesting)),
         });

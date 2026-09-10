@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ClipboardCheck, LogOut } from "lucide-react";
+import { ClipboardCheck, Lightbulb, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 
@@ -18,6 +18,11 @@ export function AccountMenu() {
           </Link>
         </Button>
       )}
+      <Button asChild variant="secondary" size="sm">
+        <Link to="/sugestoes">
+          <Lightbulb className="mr-1 size-4" /> Sugestões
+        </Link>
+      </Button>
       <Button variant="secondary" size="sm" onClick={() => void signOut()}>
         <LogOut className="mr-1 size-4" /> Sair
       </Button>

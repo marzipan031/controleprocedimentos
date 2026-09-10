@@ -8,6 +8,7 @@ import Estatisticas from "@/pages/Estatisticas";
 import Login from "@/pages/Login";
 import ResetPassword from "@/pages/ResetPassword";
 import Cadastros from "@/pages/Cadastros";
+import Sugestoes from "@/pages/Sugestoes";
 
 function App() {
   return (
@@ -41,6 +42,14 @@ function App() {
                 <RequireAdmin>
                   <Cadastros />
                 </RequireAdmin>
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/sugestoes"
+            element={
+              <RequireAuth>
+                <Sugestoes />
               </RequireAuth>
             }
           />

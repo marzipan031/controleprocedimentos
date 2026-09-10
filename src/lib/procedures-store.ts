@@ -17,6 +17,8 @@ export type ProcedureRecord = {
   findings?: string;
   biopsy?: boolean;
   interesting?: boolean;
+  /** Laudo do anatomopatológico (opcional, ligado/desligado no formulário). */
+  pathologyReport?: string;
   created_at: string;
 };
 
@@ -207,6 +209,7 @@ type ProcedureRow = {
   findings: string | null;
   biopsy: boolean | null;
   interesting: boolean | null;
+  pathology_report: string | null;
   created_at: string;
 };
 
@@ -223,6 +226,7 @@ function rowToRecord(row: ProcedureRow): ProcedureRecord {
     findings: row.findings ?? "",
     biopsy: row.biopsy ?? false,
     interesting: row.interesting ?? false,
+    pathologyReport: row.pathology_report ?? undefined,
     created_at: row.created_at,
   };
 }
@@ -240,6 +244,7 @@ function recordToInsertRow(r: Partial<ProcedureRecord>) {
     findings: r.findings || "",
     biopsy: !!r.biopsy,
     interesting: !!r.interesting,
+    pathology_report: r.pathologyReport || null,
   };
   if (r.id) row.id = r.id;
   if (r.created_at) row.created_at = r.created_at;
@@ -263,6 +268,7 @@ function recordToUpdateRow(patch: Partial<ProcedureRecord>) {
   if (patch.findings !== undefined) row.findings = patch.findings;
   if (patch.biopsy !== undefined) row.biopsy = patch.biopsy;
   if (patch.interesting !== undefined) row.interesting = patch.interesting;
+  if (patch.pathologyReport !== undefined) row.pathology_report = patch.pathologyReport || null;
   return row;
 }
 
@@ -709,6 +715,7 @@ export function toCSV(rows: ProcedureRecord[]) {
     "Chefe Responsável",
     "Observação",
     "Achados",
+    "Laudo Anatomopatológico",
     "Checar Biópsia",
     "Interessante",
   ];
@@ -722,6 +729,7 @@ export function toCSV(rows: ProcedureRecord[]) {
       r.chief || "-",
       r.observation || "-",
       r.findings || "-",
+      r.pathologyReport || "-",
       r.biopsy ? "Sim" : "Não",
       r.interesting ? "Sim" : "Não",
     ]

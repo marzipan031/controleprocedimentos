@@ -46,6 +46,7 @@ type Props = {
     findings: string;
     biopsy: boolean;
     interesting: boolean;
+    pathologyReport: string;
   }) => void;
 };
 
@@ -72,6 +73,8 @@ export function ProcedureForm({
   const [findings, setFindings] = useState("");
   const [biopsy, setBiopsy] = useState(false);
   const [interesting, setInteresting] = useState(false);
+  const [hasPathologyReport, setHasPathologyReport] = useState(false);
+  const [pathologyReport, setPathologyReport] = useState("");
 
   useEffect(() => {
     if (editing) {
@@ -85,6 +88,8 @@ export function ProcedureForm({
       setFindings(editing.findings || "");
       setBiopsy(!!editing.biopsy);
       setInteresting(!!editing.interesting);
+      setHasPathologyReport(!!editing.pathologyReport);
+      setPathologyReport(editing.pathologyReport || "");
     }
   }, [editing]);
 
@@ -100,6 +105,8 @@ export function ProcedureForm({
     setFindings("");
     setBiopsy(false);
     setInteresting(false);
+    setHasPathologyReport(false);
+    setPathologyReport("");
   };
 
   const addType = () => {
@@ -145,6 +152,7 @@ export function ProcedureForm({
       findings: findings.trim(),
       biopsy,
       interesting,
+      pathologyReport: hasPathologyReport ? pathologyReport.trim() : "",
     });
     reset();
   };
@@ -327,6 +335,31 @@ export function ProcedureForm({
               onChange={(e) => setFindings(e.target.value)}
               placeholder="Descreva os achados do procedimento (opcional)"
             />
+          </div>
+          <div className="space-y-2 sm:col-span-2 lg:col-span-5">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="pathology-toggle"
+                checked={hasPathologyReport}
+                onCheckedChange={(v) => {
+                  setHasPathologyReport(v);
+                  if (!v) setPathologyReport("");
+                }}
+              />
+              <Label htmlFor="pathology-toggle" className="cursor-pointer">
+                Laudo anatomopatológico
+              </Label>
+            </div>
+            {hasPathologyReport && (
+              <Textarea
+                id="pathology-report"
+                value={pathologyReport}
+                maxLength={2000}
+                rows={3}
+                onChange={(e) => setPathologyReport(e.target.value)}
+                placeholder="Cole ou digite o laudo do anatomopatológico"
+              />
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-6 sm:col-span-2 lg:col-span-5">
             <div className="flex items-center gap-2">

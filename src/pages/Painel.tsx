@@ -395,6 +395,16 @@ export default function Painel() {
           onDelete={(r) => deleteWithUndo([r], "Registro excluído.")}
           onDeleteSelected={() => setConfirmBulk(true)}
           onToggle={(r, field, value) => updateRecord(r.id, { [field]: value })}
+          onPatientClick={(patient) => {
+            setQuery(patient);
+            setFrom("");
+            setTo("");
+            setOnlyBiopsy(false);
+            setOnlyInteresting(false);
+            setTypeFilter([]);
+            setChiefFilter([]);
+            toast.info(`Mostrando procedimentos de ${patient}.`);
+          }}
         />
           </>
         )}

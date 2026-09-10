@@ -276,6 +276,16 @@ export default function Estatisticas() {
     setPatientFilter("");
   };
 
+  const showAllForPatient = (patient: string) => {
+    setPatientFilter(patient);
+    setFrom("");
+    setTo("");
+    setTypeFilter([]);
+    setChiefFilter([]);
+    setOnlyBiopsy(false);
+    setOnlyInteresting(false);
+  };
+
   const period =
     rows.length === 0
       ? "—"
@@ -628,7 +638,16 @@ export default function Estatisticas() {
                         <TableCell className="whitespace-nowrap tabular-nums">
                           {formatDateBR(r.date)}
                         </TableCell>
-                        <TableCell className="font-medium">{r.patient}</TableCell>
+                        <TableCell className="font-medium">
+                          <button
+                            type="button"
+                            className="text-left underline-offset-2 hover:underline"
+                            title={`Ver todos os procedimentos de ${r.patient}`}
+                            onClick={() => showAllForPatient(r.patient)}
+                          >
+                            {r.patient}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">
                           {r.encounterNumber || "-"}
                         </TableCell>
