@@ -16,6 +16,7 @@ import { typeBadgeClass } from "@/lib/type-colors";
 
 export function ProceduresTable({
   rows,
+  totalCount,
   allTypes,
   selectedIds,
   onEdit,
@@ -27,6 +28,8 @@ export function ProceduresTable({
   onPatientClick,
 }: {
   rows: ProcedureRecord[];
+  /** Total após os filtros, se `rows` for só a página atual (padrão: rows.length). */
+  totalCount?: number;
   allTypes: string[];
   selectedIds: Set<string>;
   onEdit: (r: ProcedureRecord) => void;
@@ -45,7 +48,9 @@ export function ProceduresTable({
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CardTitle className="text-base">
           Procedimentos{" "}
-          <span className="text-sm font-normal text-muted-foreground">({rows.length})</span>
+          <span className="text-sm font-normal text-muted-foreground">
+            ({totalCount ?? rows.length})
+          </span>
         </CardTitle>
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2">
@@ -100,14 +105,15 @@ export function ProceduresTable({
                 <TableCell className="whitespace-nowrap tabular-nums">{formatDateBR(r.date)}</TableCell>
                 <TableCell className="font-medium">
                   {onPatientClick ? (
-                    <button
+                    <Button
                       type="button"
-                      className="text-left underline-offset-2 hover:underline"
+                      variant="link"
+                      className="h-auto p-0 font-medium"
                       title={`Ver todos os procedimentos de ${r.patient}`}
                       onClick={() => onPatientClick(r.patient)}
                     >
                       {r.patient}
-                    </button>
+                    </Button>
                   ) : (
                     r.patient
                   )}

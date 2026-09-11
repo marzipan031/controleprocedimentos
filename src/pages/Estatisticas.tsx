@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeftRight,
   BarChart3,
   ChevronDown,
   ChevronLeft,
+  ChevronRight,
   FlaskConical,
   Loader2,
   Star,
@@ -44,6 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
 import { AccountMenu } from "@/components/procedures/AccountMenu";
 import { TypeCards } from "@/components/procedures/TypeCards";
 import { HistoricalCounts } from "@/components/procedures/HistoricalCounts";
@@ -109,6 +111,8 @@ function presetRange(id: PeriodPreset): { from: string; to: string } {
 type ChiefRow = { chief: string; total: number; values: Record<string, number> };
 type MonthRow = { month: string; label: string; total: number; values: Record<string, number> };
 
+const TABLE_PAGE_SIZE = 50;
+
 export default function Estatisticas() {
   useEffect(() => {
     document.title = "Estatísticas de Procedimentos | Gráficos e Filtros";
@@ -160,6 +164,8 @@ export default function Estatisticas() {
   const [onlyBiopsy, setOnlyBiopsy] = useState(false);
   const [onlyInteresting, setOnlyInteresting] = useState(false);
   const [patientFilter, setPatientFilter] = useState("");
+  const [rowsPage, setRowsPage] = useState(0);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const toggleIn = (list: string[], v: string) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
@@ -187,8 +193,28 @@ export default function Estatisticas() {
       .filter((r) => (onlyInteresting ? !!r.interesting : true))
       .filter((r) => (typeFilter.length ? procedureTypes(r).some((t) => typeFilter.includes(t)) : true))
       .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true))
-      .filter((r) => (nameQuery ? r.patient.toLowerCase().includes(nameQuery) : true));
+      .filter((r) =>
+        nameQuery
+          ? r.patient.toLowerCase().includes(nameQuery) ||
+            (r.findings || "").toLowerCase().includes(nameQuery)
+          : true,
+      );
   }, [records, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter, patientFilter]);
+
+  const rowsTotalPages = Math.max(1, Math.ceil(rows.length / TABLE_PAGE_SIZE));
+
+  useEffect(() => {
+    setRowsPage(0);
+  }, [from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter, patientFilter]);
+
+  useEffect(() => {
+    if (rowsPage > rowsTotalPages - 1) setRowsPage(rowsTotalPages - 1);
+  }, [rowsPage, rowsTotalPages]);
+
+  const pageRows = useMemo(
+    () => rows.slice(rowsPage * TABLE_PAGE_SIZE, rowsPage * TABLE_PAGE_SIZE + TABLE_PAGE_SIZE),
+    [rows, rowsPage],
+  );
 
   const allTypes = useMemo(() => {
     const set = new Set<string>(types);
@@ -284,6 +310,8 @@ export default function Estatisticas() {
     setChiefFilter([]);
     setOnlyBiopsy(false);
     setOnlyInteresting(false);
+    toast.info(`Mostrando registros de ${patient}.`);
+    filterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const period =
@@ -334,15 +362,16 @@ export default function Estatisticas() {
             </CardContent>
           </Card>
         )}
+        <div ref={filterRef}>
         <Card>
           <CardContent className="flex flex-wrap items-end gap-3 pt-6">
             <div className="grid gap-1">
-              <Label htmlFor="patient-search">Paciente</Label>
+              <Label htmlFor="patient-search">Paciente ou achados</Label>
               <Input
                 id="patient-search"
                 value={patientFilter}
                 onChange={(e) => setPatientFilter(e.target.value)}
-                placeholder="Buscar por nome"
+                placeholder="Buscar por nome ou achado"
                 className="w-44"
               />
             </div>
@@ -434,6 +463,7 @@ export default function Estatisticas() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Card>
@@ -633,20 +663,21 @@ export default function Estatisticas() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.map((r) => (
+                    {pageRows.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap tabular-nums">
                           {formatDateBR(r.date)}
                         </TableCell>
                         <TableCell className="font-medium">
-                          <button
+                          <Button
                             type="button"
-                            className="text-left underline-offset-2 hover:underline"
+                            variant="link"
+                            className="h-auto p-0 font-medium"
                             title={`Ver todos os procedimentos de ${r.patient}`}
                             onClick={() => showAllForPatient(r.patient)}
                           >
                             {r.patient}
-                          </button>
+                          </Button>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {r.encounterNumber || "-"}
@@ -665,6 +696,33 @@ export default function Estatisticas() {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+            {rows.length > TABLE_PAGE_SIZE && (
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm text-muted-foreground">
+                  Página {rowsPage + 1} de {rowsTotalPages}
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={rowsPage === 0}
+                    onClick={() => setRowsPage((p) => Math.max(0, p - 1))}
+                  >
+                    <ChevronLeft className="size-4" /> Anterior
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={rowsPage >= rowsTotalPages - 1}
+                    onClick={() => setRowsPage((p) => Math.min(rowsTotalPages - 1, p + 1))}
+                  >
+                    Próxima <ChevronRight className="size-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

@@ -4,6 +4,8 @@ import {
   ArrowLeftRight,
   BarChart3,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FlaskConical,
   HeartPulse,
@@ -48,6 +50,8 @@ import {
   useProceduresData,
   type ProcedureRecord,
 } from "@/lib/procedures-store";
+
+const PAGE_SIZE = 50;
 
 export default function Painel() {
   useEffect(() => {
@@ -103,7 +107,9 @@ export default function Painel() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastDeleted, setLastDeleted] = useState<ProcedureRecord[]>([]);
   const [confirmBulk, setConfirmBulk] = useState(false);
+  const [page, setPage] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -128,6 +134,21 @@ export default function Painel() {
       .filter((r) => (chiefFilter.length ? chiefFilter.includes(r.chief) : true))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   }, [records, query, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(0);
+  }, [query, from, to, onlyBiopsy, onlyInteresting, typeFilter, chiefFilter]);
+
+  useEffect(() => {
+    if (page > totalPages - 1) setPage(totalPages - 1);
+  }, [page, totalPages]);
+
+  const pageRows = useMemo(
+    () => filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE),
+    [filtered, page],
+  );
 
   const activeFilters =
     (query ? 1 : 0) +
@@ -235,6 +256,7 @@ export default function Painel() {
         </div>
         )}
 
+        <div ref={filterRef}>
         <Card className="shadow-[var(--shadow-card)]">
           <CardContent className="grid gap-4 py-5 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2 lg:col-span-2">
@@ -244,7 +266,7 @@ export default function Painel() {
                 <Input
                   id="q"
                   className="pl-9"
-                  placeholder="Paciente, atendimento, chefe ou tipo de procedimento"
+                  placeholder="Paciente, atendimento, chefe, tipo ou achados"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />
@@ -372,9 +394,11 @@ export default function Painel() {
             )}
           </CardContent>
         </Card>
+        </div>
 
         <ProceduresTable
-          rows={filtered}
+          rows={pageRows}
+          totalCount={filtered.length}
           allTypes={types}
           selectedIds={selectedIds}
           onSelect={(id, value) =>
@@ -386,7 +410,7 @@ export default function Painel() {
             })
           }
           onSelectAll={(value) =>
-            setSelectedIds(new Set(value ? filtered.map((r) => r.id) : []))
+            setSelectedIds(new Set(value ? pageRows.map((r) => r.id) : []))
           }
           onEdit={(r) => {
             setEditing(r);
@@ -404,8 +428,35 @@ export default function Painel() {
             setTypeFilter([]);
             setChiefFilter([]);
             toast.info(`Mostrando procedimentos de ${patient}.`);
+            filterRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
         />
+
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">
+              Página {page + 1} de {totalPages} · {filtered.length} procedimento(s)
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                <ChevronLeft className="size-4" /> Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              >
+                Próxima <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        )}
           </>
         )}
       </main>
